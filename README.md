@@ -31,5 +31,11 @@
 If you have Wowza hosting with us, our staff can assist with setting this up (our plans come with a rtmp address preconfigured for such usage).
 
 
+This is a simple setup for easy deployment and integration with other PHP scripts. 
+
 For assistance and clarifications, [Contact VideoWhisper](https://videowhisper.com/tickets_submit.php).
+
+
+For a more advanced setup, see this turnkey live video broadcasting site solution based on WP: 
+[Broadcast Live Video](https://broadcastlivevideo.com/) 
 
