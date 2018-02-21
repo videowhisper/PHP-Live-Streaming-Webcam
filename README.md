@@ -2,6 +2,8 @@
 
 [PHP Live Streaming Homepage](https://videowhisper.com/?p=php+live+streaming)
 
+![PHP Live Streaming Webcam](/snapshots/ls_371x275.jpg)
+
 ## Key Features
  * Create Live Video Channels
  * Broadcast Live Video from Browser
