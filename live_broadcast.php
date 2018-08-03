@@ -40,7 +40,14 @@ $wmode="transparent";
 
       <p>This html content is editable. The flash workspace above can have any size. Various settings can be configured from vc_login.php .
 	  <BR>
-	  Test <a target="_blank" href="channel.php?n=<?=urlencode($username)?>">channel page</a> (where people can also chat live), <a target="_blank" href="video_small.php?n=<?=$username?>">plain video</a> (<a target="_blank" href="video.php?n=<?=$username?>">fullpage video</a>), just <a target="_blank" href="htmlchat.php?n=<?=urlencode($username)?>">plain html external text only chat</a> (for old mobile access), <a target="_blank" href="videotext.php?n=<?=urlencode($username)?>">plain video with floating html text</a> (read only), <a target="_blank" href="ls_transcoder.php?n=<?=urlencode($username)?>">Transcoder for HTML5 live video playback</a> (HLS for Safari & iOS/Android, MPEG-DASH for Chrone & Android, if available).</p>
+	  Test channel features (some may not be available depending on server configuration and device): 
+	  <BR> + <a target="_blank" href="channel.php?n=<?=urlencode($username)?>">channel page</a> (where people can also chat live)
+	  <BR> + <a target="_blank" href="video_small.php?n=<?=$username?>">plain video</a> (<a target="_blank" href="video.php?n=<?=$username?>">fullpage video</a>)
+	  <BR> + <a target="_blank" href="webrtc-play.php?n=<?=urlencode($username)?>">WebRTC Playback</a> (HTML5 playback with WebRTC technology, sound may not be available without matching codecs)
+	  <BR> + <a target="_blank" href="webrtc-publish.php?n=<?=urlencode($username)?>">WebRTC Publish</a> (HTML5 publishing with WebRTC technology, can only stream from 1 interface)
+	  <BR> + <a target="_blank" href="htmlchat.php?n=<?=urlencode($username)?>">plain html external text only chat</a> (for old mobile access)
+	  <BR> + <a target="_blank" href="videotext.php?n=<?=urlencode($username)?>">plain video with floating html text</a> (read only)
+	  <BR> + <a target="_blank" href="ls_transcoder.php?n=<?=urlencode($username)?>">Transcoder for HTML5 live video playback</a> (HLS for Safari & iOS/Android, MPEG-DASH for Chrome & Android, if available).</p>
 	  <P>Ordering a <a target="_blan k" href="http://www.videowhisper.com/?p=Invest#level1">license</a> removes banner ads and usage limitations (for licensed domain).</P>
 	  <p>For more details about this edition see VideoWhisper <a target="_blank" href="http://www.videowhisper.com/?p=PHP+Live+Streaming">PHP Live Streaming</a> page. This plain php edition is for easy integration with other sites and frameworks. For building a turnkey site with member/channel management, backend, see <a href="http://www.videowhisper.com/?p=WordPress+Live+Streaming">WordPress Live Streaming</a> edition.</p></td>
 </body>

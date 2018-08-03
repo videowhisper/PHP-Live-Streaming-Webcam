@@ -39,7 +39,7 @@ if (!$transcoding)
 //	$cmd ="/usr/local/bin/ffmpeg -vcodec libx264 -s 480x360 -r 15 -vb 512k -x264opts vbv-maxrate=364:qpmin=4:ref=4 -coder 0 -bf 0 -analyzeduration 0 -level 3.1 -g 30 -maxrate 768k -acodec libfaac -ac 2 -ar 22050 -ab 96k -level 3.1 -g 30 -maxrate 768k -acodec libfaac -ac 2 -ar 22050 -ab 96k -x264opts vbv-maxrate=364:qpmin=4:ref=4 -threads 1 -rtmp_pageurl http://".$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'] . " -rtmp_swfurl http://".$_SERVER['HTTP_HOST']." -f flv " . $rtmp_server . "/i_". $stream . " -i " . $rtmp_server ."/". $stream . " >&$log_file & ";
 
 //audio transcode only, when using h264 web encoding
-	$cmd ="/usr/local/bin/ffmpeg -analyzeduration 0 -vcodec copy -acodec libfaac -ac 2 -ar 22050 -ab 96k -threads 1 -rtmp_pageurl http://".$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'] . " -rtmp_swfurl http://".$_SERVER['HTTP_HOST']." -f flv " . $rtmp_server . "/i_". $stream . " -i " . $rtmp_server ."/". $stream . " >&$log_file & ";
+	$cmd = $ffmpeg_call . " -f flv " . $rtmp_server_ffmpeg . "/i_". $stream . " -i " . $rtmp_server_ffmpeg ."/". $stream . " >&$log_file & ";
 
 	exec($cmd, $output, $returnvalue);
 
@@ -75,7 +75,7 @@ $mpegdashurl = $httpdash . 'i_' . $stream . '/manifest.mpd';
 <H4>MPEG DASH : Chrome, Android</H4>
 <p>HTML5 live video embed below should acessible only in PC Chrome and Android:</p>
 
-<script src="http://cdn.dashjs.org/latest/dash.all.min.js"></script>
+<script src="https://cdn.dashjs.org/latest/dash.all.min.js"></script>
 <video width="640" height="480" data-dashjs-player src="<?php echo $mpegdashurl ?>" autoplay controls="controls">
     <div class="fallback">
 	    <p>You must have an HTML5 capable browser.</p>

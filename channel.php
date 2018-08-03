@@ -38,7 +38,7 @@ a
       <?php
 $agent = $_SERVER['HTTP_USER_AGENT'];
 if( strstr($agent,'iPhone') || strstr($agent,'iPod') || strstr($agent,'iPad'))
-echo "<p><b>iOS detected: If your browser does not support Flash plugin, a transcoded stream could be available (if supported by host): <BR> <a href='ls_transcoder.php?n=$n'>VideoWhisper iOS Transcoder</a></b></p><BR>";
+echo "<p><b>iOS detected: If your browser does not support Flash plugin, WebRTC or a transcoded HLS stream could be available (if supported/configured by host): <BR><a href='webrtc-play.php?n=$n'>WebRTC Playback</a> <BR> <a href='ls_transcoder.php?n=$n'>Stream Transcoder</a>  </b></p><BR>";
 	  ?>
       </td>
   </tr>
@@ -65,5 +65,6 @@ echo "<p><b>iOS detected: If your browser does not support Flash plugin, a trans
 	?>
 		<p><font color="#FFFFFF" face="Arial, Helvetica, sans-serif">The flash workspace above can have any size. Any of the panels can be disabled from vs_login.php .
 	  <BR>You can also embed just <a href="video_small.php?n=<?=$n?>">plain video</a> (<a href="video.php?n=<?=$n?>">fullpage video</a>) or send mobile users without flash to a <a href="htmlchat.php?n=<?=$n?>">plain html external text chat interface</a>. </font></p>
-		<p>If server supports required tools HTTP Live Streaming may be available: <a target="_blank" href="ls_transcoder.php?n=<?=urlencode($n)?>">iOS Transcoder</a> (for iPhone and iPad, if available).</p>
+	  <BR>If configured, also check <a target="_blank" href="webrtc-play.php?n=<?=urlencode($n)?>">WebRTC Playback</a> - HTML5 playback with WebRTC technology.
+		<p>If server supports required tools HTTP Live Streaming may be available: <a target="_blank" href="ls_transcoder.php?n=<?=urlencode($n)?>">Stream Transcoder</a> (for iPhone and iPad, if available).</p>
       <p><a href="http://www.videowhisper.com/?p=Live+Streaming">Video Whisper Live Streaming</a></p>

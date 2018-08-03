@@ -17,11 +17,13 @@
  * Easy to Integrate
  * Transcoding Support for HTML5 playback
  * HLS iOS / MPEG DASH Android
+ * WebRTC HTML5 broadcast/playback server support
 
 
 ## Installation Instructions for PHP Live Video Streaming Software
  * Before installing, make sure your hosting environment meets all [requirements](https://videowhisper.com/?p=Requirements) (including a supported RTMP server). 
  * For enabling transcoding for HTML5 HLS / MPEG DASH playback required for iOS/Android delivery, special requirements apply: latest Wowza and FFMPEG with Flash and HTML5 specific codecs.
+ * For cross-browser WebRTC broadcast/playback and RTMPS, a SSL certificate needs to be configured with Wowza.
 
  1. If you're not hosting RTMP with VideoWhisper (see requirements and turnkey hosting options) go to [RTMP Application Setup](https://videowhisper.com/?p=RTMP+Applications) for installation details
  2. Deploy files to your web installation location. (Example: yoursite.domain/php-live-streaming-webcam/)
