@@ -19,6 +19,8 @@
  * HLS iOS / MPEG DASH Android
  * WebRTC HTML5 broadcast/playback server support
 
+[PHP Live Streaming Webcam Demo](https://videowhisper.com/demos/livestreaming/)
+
 
 ## Installation Instructions for PHP Live Video Streaming Software
  * Before installing, make sure your hosting environment meets all [requirements](https://videowhisper.com/?p=Requirements) (including a supported RTMP server). 

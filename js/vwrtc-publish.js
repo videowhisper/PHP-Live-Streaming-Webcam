@@ -1,3 +1,13 @@
+//VideoWhisper.com WebRTC implemetation
+
+//vars
+'use strict';
+
+var audioSelect = null;
+var videoSelect = null;
+var selectors = null;
+
+//
 var localVideo = null;
 var remoteVideo = null;
 var peerConnection = null;
@@ -6,36 +16,105 @@ var localStream = null;
 var wsConnection = null;
 var videoIndex = -1;
 var audioIndex = -1;
-var newAPI = false;
+var newAPI = true;
 var SDPOutput = new Object();
 
-//WebRTC Publish
 
-function browserReady()
+//Input Select code
+function selectorsReady()
 {
+	//selectors
+	audioSelect = document.getElementById('audioSource'); 
+	videoSelect = document.getElementById('videoSource'); 
 
-	if ( userAgent == null )
-	{
-		userAgent="unknown";
-	}
+	selectors = [audioSelect, videoSelect];
+	
+	navigator.mediaDevices.enumerateDevices().then(gotDevices).catch(handleError);
+	
+	audioSelect.onchange = selectorStart;
 
+	videoSelect.onchange = selectorStart;
 
-	localVideo = document.getElementById('localVideo');
+	selectorStart();
+}
 
-    var constraints =
-    {
-		video: true,
-		audio: true,
-    };
+function gotDevices(deviceInfos) {
+  // Handles being called several times to update labels. Preserve values.
+  const values = selectors.map(select => select.value);
+  selectors.forEach(select => {
+    while (select.firstChild) {
+      select.removeChild(select.firstChild);
+    }
+  });
+  for (let i = 0; i !== deviceInfos.length; ++i) {
+    const deviceInfo = deviceInfos[i];
+    const option = document.createElement('option');
+    option.value = deviceInfo.deviceId;
+    if (deviceInfo.kind === 'audioinput') {
+      option.text = deviceInfo.label || `microphone jQuery{audioSelect.length + 1}`;
+      audioSelect.appendChild(option);
+    } else if (deviceInfo.kind === 'videoinput') {
+      option.text = deviceInfo.label || `camera jQuery{videoSelect.length + 1}`;
+      videoSelect.appendChild(option);
+    } else {
+      console.log('Some other kind of source/device: ', deviceInfo);
+    }
+  }
+  selectors.forEach((select, selectorIndex) => {
+    if (Array.prototype.slice.call(select.childNodes).some(n => n.value === values[selectorIndex])) {
+      select.value = values[selectorIndex];
+    }
+  });
+
+}
+
+function gotStream(stream) {
+  window.stream = stream; // make stream available to console
+  localVideo.srcObject = stream;
+  
+   	console.log("gotStream after getUserMedia: "+stream);
+    localStream = stream;   	
+     	
+     //close prev stream
+     if (localStream != null) stopPublisher();
+     
+ 	//publish
+ 	startPublisher();
+
+  // Refresh button list in case labels have become available
+  return navigator.mediaDevices.enumerateDevices();
+}
+
+function handleError(error) {
+  console.log('navigator.getUserMedia select error: ', error);
+}
+
+function selectorStart() {
+  if (window.stream) {
+    window.stream.getTracks().forEach(track => {
+      track.stop();
+    });
+  }
+  const audioSource = audioSelect.value;
+  const videoSource = videoSelect.value;
+  const constraints = {
+    audio: {deviceId: audioSource ? {exact: audioSource} : undefined},
+    video: {deviceId: videoSource ? {exact: videoSource} : undefined}
+  };
+  
+ 
 
     if(navigator.mediaDevices.getUserMedia)
 	{
-		navigator.mediaDevices.getUserMedia(constraints).then(getUserMediaSuccess).catch(errorHandler);
-		newAPI = false;
+		navigator.mediaDevices.getUserMedia(constraints).then(gotStream).then(gotDevices).catch(handleError);
+		newAPI = true;
+
 	}
     else if (navigator.getUserMedia)
     {
-        navigator.getUserMedia(constraints, getUserMediaSuccess, errorHandler);
+        navigator.getUserMedia(constraints, gotStream, errorHandler).then(gotDevices).catch(handleError);
+        newAPI = false;
+
     }
     else
     {
@@ -43,6 +122,26 @@ function browserReady()
     }
 
 	console.log("newAPI: "+newAPI);
+
+ 
+}
+
+
+
+//WebRTC Publish
+
+
+
+function browserReady()
+{
+
+	localVideo = document.getElementById('localVideo');
+	if ( userAgent == null )
+	{
+		userAgent="unknown";
+	}
+
+	selectorsReady();
 	
 }
 
@@ -60,11 +159,16 @@ function wsConnect(url)
 
 		if (newAPI)
 		{
+			
+			localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));	
+		//	localStream.getTracks().forEach(function(track) {peerConnection.addTrack(track, stream);});
+		/*	
 			var localTracks = localStream.getTracks();
-			for(localTrack in localTracks)
+			for(var localTrack in localTracks)
 			{
 				peerConnection.addTrack(localTracks[localTrack], localStream);
 			}
+			*/
 		}
 		else
 		{
@@ -87,12 +191,12 @@ function wsConnect(url)
 
 		if (msgStatus != 200)
 		{
-			$("#sdpDataTag").html(msgJSON['statusDescription']);
+			jQuery("#sdpDataTag").html(msgJSON['statusDescription']);
 			stopPublisher();
 		}
 		else
 		{
-			$("#sdpDataTag").html("");
+			jQuery("#sdpDataTag").html("");
 
 			var sdpData = msgJSON['sdp'];
 			if (sdpData !== undefined)
@@ -130,7 +234,7 @@ function wsConnect(url)
 	{
 		console.log("wsConnection.onerror: "+JSON.stringify(evt));
 
-		$("#sdpDataTag").html('WebSocket connection failed: '+wsURL);
+		jQuery("#sdpDataTag").html('WebSocket connection failed: '+wsURL);
 		stopPublisher();
 	}
 }
@@ -143,7 +247,6 @@ function getUserMediaSuccess(stream)
  	
  	//publish
  	startPublisher();
-
 }
 
 function startPublisher()
@@ -300,6 +403,7 @@ function enhanceSDP(sdpStr, enhanceData)
 	var sdpSection = 'header';
 	var hitMID = false;
 	var sdpStrRet = '';
+	var audioMLines = null;
 
 	if ( !sdpStr.includes("THIS_IS_SDPARTA") || videoChoice.includes("VP9") )
 	{
@@ -515,3 +619,7 @@ function errorHandler(error)
 {
     console.log(error);
 }
+
+//end
+
+

@@ -17,7 +17,7 @@
 ?>			
 		<div class="div-section">VideoWhisper WebRTC - Channel Stream Playback: <?php echo $streamName ?></div>
 		<div class="div-section">
-		<video id="remoteVideo" autoplay style="height:480px;"></video>
+		<video id="remoteVideo" playsinline autoplay style="height:480px;"></video>
 		</div>
 		
 		<script type="text/javascript">

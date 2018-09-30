@@ -1,3 +1,4 @@
+//VideoWhisper.com WebRTC implemetation
 
 var remoteVideo = null;
 var peerConnection = null;
@@ -5,9 +6,7 @@ var peerConnectionConfig = {'iceServers': []};
 var localStream = null;
 var wsConnection = null;
 var repeaterRetryCount = 0;
-var newAPI = false;
-var doGetAvailableStreams = false;
-
+var newAPI = true;
 
 
 //WebRTC Playback
@@ -17,6 +16,9 @@ function browserReady()
 	remoteVideo = document.getElementById('remoteVideo');
 
 	if(navigator.mediaDevices.getUserMedia)
+	{
+		newAPI = true;
+	}else if (navigator.getUserMedia)
 	{
 		newAPI = false;
 	}
@@ -36,7 +38,12 @@ function wsConnect(url)
 		console.log("wsConnection.onopen");
 		
 		peerConnection = new RTCPeerConnection(peerConnectionConfig);
-		peerConnection.onicecandidate = gotIceCandidate;
+		
+		peerConnection.addTransceiver('audio');
+		peerConnection.addTransceiver('video');
+
+		peerConnection.onicecandidate = gotIceCandidate;	
+		
 		
 		if (newAPI)
 		{
@@ -47,16 +54,10 @@ function wsConnect(url)
 			peerConnection.onaddstream = gotRemoteStream;
 		}
 
-		console.log("wsURL: "+wsURL);
-		
-		if (doGetAvailableStreams)
-		{
-			sendPlayGetAvailableStreams();
-		}
-		else
-		{
-			sendPlayGetOffer();
-		}
+		console.log("wsURL: "+wsURL);	
+
+		sendPlayGetOffer();
+	
 	}
 	
 	function sendPlayGetOffer()
@@ -65,11 +66,6 @@ function wsConnect(url)
 		wsConnection.send('{"direction":"play", "command":"getOffer", "streamInfo":'+JSON.stringify(streamInfo)+', "userData":'+JSON.stringify(userData)+'}');
 	}
 
-	function sendPlayGetAvailableStreams()
-	{
-		console.log("sendPlayGetAvailableStreams: "+JSON.stringify(streamInfo));
-		wsConnection.send('{"direction":"play", "command":"getAvailableStreams", "streamInfo":'+JSON.stringify(streamInfo)+', "userData":'+JSON.stringify(userData)+'}');
-	}
 
 	wsConnection.onmessage = function(evt)
 	{
@@ -89,18 +85,18 @@ function wsConnect(url)
 			}
 			else
 			{
-				$("#sdpDataTag").html('Live stream repeater timeout: '+streamName);
+				jQuery("#sdpDataTag").html('Live stream repeater timeout: '+streamName);
 				stopPlay();
 			}
 		}
 		else if (msgStatus != 200)
 		{
-			$("#sdpDataTag").html(msgJSON['statusDescription']);
+			jQuery("#sdpDataTag").html(msgJSON['statusDescription']);
 			stopPlay();
 		}
 		else
 		{
-			$("#sdpDataTag").html("");
+			jQuery("#sdpDataTag").html("");
 
 			var streamInfoResponse = msgJSON['streamInfo'];
 			if (streamInfoResponse !== undefined)
@@ -135,11 +131,7 @@ function wsConnect(url)
 				wsConnection.close();
 			wsConnection = null;
 		}
-		// now check for getAvailableResponse command to close the connection 
-		if ('getAvailableStreams'.localeCompare(msgCommand) == 0)
-		{
-			stopPlay();
-		}
+
 	}
 	
 	wsConnection.onclose = function()
@@ -151,14 +143,8 @@ function wsConnect(url)
 	{
 		console.log("wsConnection.onerror: "+JSON.stringify(evt));
 		
-		$("#sdpDataTag").html('WebSocket connection failed: '+wsURL);
+		jQuery("#sdpDataTag").html('WebSocket connection failed: '+wsURL);
 	}
-}
-
-function getAvailableStreams()
-{
-	doGetAvailableStreams=true;
-	startPlay();
 }
 
 function startPlay()
@@ -182,6 +168,7 @@ function stopPlay()
 	wsConnection = null;
 	
 	remoteVideo.src = ""; // this seems like a chrome bug - if set to null it will make HTTP request
+	//remoteVideo.srcObject = null; //2
 
 	console.log("stopPlay");
 }
@@ -189,7 +176,6 @@ function stopPlay()
 // start button clicked
 function start() 
 {
-	doGetAvailableStreams=false;
 
 	if (peerConnection == null)
 		startPlay();
@@ -204,7 +190,7 @@ function gotMessageFromServer(message)
 	{
 		if (signal.sdp.type == 'offer')
 		{
-			console.log('sdp:offser');
+			console.log('sdp:offer');
 			console.log(signal.sdp.sdp);
 			peerConnection.setRemoteDescription(new RTCSessionDescription(signal.sdp), function() {
 				peerConnection.createAnswer(gotDescription, errorHandler);
@@ -228,11 +214,15 @@ function gotIceCandidate(event)
 	if(event.candidate != null) 
 	{
 	}
+	
+  console.log('gotIceCandidate: ICE candidate:' + (event.candidate ? event.candidate.candidate : '(null)'));
+	
 }
 
 function gotDescription(description) 
 {
 	console.log('gotDescription');
+	
 	peerConnection.setLocalDescription(description, function () 
 	{
 		console.log('sendAnswer');
@@ -242,17 +232,40 @@ function gotDescription(description)
 	}, function() {console.log('set description error')});
 }
 
+
 function gotRemoteTrack(event) 
 {
+
 	console.log('gotRemoteTrack: kind:'+event.track.kind+' stream:'+event.streams[0]);
-	//remoteVideo.src = window.URL.createObjectURL(event.streams[0]);
+	
+
+	if (event.streams[0] == remoteVideo.srcObject ) console.log('Same stream received');
+	else
+	{
+	// reset srcObject to work around minor bugs in Chrome and Edge.
+	remoteVideo.srcObject = null;
 	remoteVideo.srcObject = event.streams[0]; 
+	}
+
+/*
+var promise = remoteVideo.play();
+
+if (promise !== undefined) {
+    promise.catch(error => {
+        console.log(error);
+        // Show a UI element to let the user manually start playback
+    }).then(() => {
+        console.log('Auto-play started');
+    });
+}
+*/
 
 }
 
 function gotRemoteStream(event) 
 {
 	console.log('gotRemoteStream: '+event.stream);
+	
 	remoteVideo.srcObject = event.stream; 
 }
 
