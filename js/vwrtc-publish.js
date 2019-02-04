@@ -6,6 +6,7 @@
 var audioSelect = null;
 var videoSelect = null;
 var selectors = null;
+var resolutionSelect = null; 
 
 //
 var localVideo = null;
@@ -20,7 +21,119 @@ var newAPI = true;
 var SDPOutput = new Object();
 
 
+var videoWidth = '640';
+var videoHeight = '480';
+	
+const cameraResolutions = {
+    "4K": {
+        "label": "4K UHD",
+        "width": 3840,
+        "height": 2160,
+        "ratio": "16:9"
+    },
+     "1080p": {
+        "label": "1080p FHD",
+        "width": 1920,
+        "height": 1080,
+        "ratio": "16:9"
+    },
+    "720p": {
+        "label": "720p HD ",
+        "width": 1280,
+        "height": 720,
+        "ratio": "16:9"
+    },
+    "SVGA": {
+        "label": "SVGA",
+        "width": 800,
+        "height": 600,
+        "ratio": "4:3"
+    },
+    "VGA": {
+        "label": "VGA",
+        "width": 640,
+        "height": 480,
+        "ratio": "4:3"
+    },
+    "360p": {
+        "label": "360p nHD",
+        "width": 640,
+        "height": 360,
+        "ratio": "16:9"
+    },
+    "CIF": {
+        "label": "CIF",
+        "width": 352,
+        "height": 288,
+        "ratio": "4:3"
+    },
+    "QVGA": {
+        "label": "QVGA",
+        "width": 320,
+        "height": 240,
+        "ratio": "4:3"
+    }
+};
+
+
+
 //Input Select code
+
+//in Safari deviceID is not stable
+
+var videoSource = null; //webcam id
+var audioSource = null; //microphone id
+var videoSelected = null; //webcam selected
+var audioSelected = null; //microphone selected
+
+function selectorsReady()
+{
+	console.log('selectorsReady');
+
+	//selectors
+	audioSelect = document.getElementById('audioSource'); 
+	videoSelect = document.getElementById('videoSource'); 
+	resolutionSelect = document.getElementById('videoResolution'); 
+
+	selectors = [audioSelect, videoSelect];
+	
+	navigator.mediaDevices.enumerateDevices().then(gotDevices).catch(handleError);
+	
+	audioSelect.onchange = selectorChange;
+	videoSelect.onchange = selectorChange;
+
+	//resolutions list
+	for (var key in cameraResolutions)
+	{
+		   const option = document.createElement('option');
+		   option.value = key;
+		   option.text = cameraResolutions[key]['label'] + ' ' + cameraResolutions[key]['width'] + 'x' + cameraResolutions[key]['height'];
+		   resolutionSelect.appendChild(option);
+	}
+	
+	resolutionSelect.selectedIndex = 4;
+	
+	resolutionSelect.onchange = selectorChange;
+
+	selectorStart();
+	
+}
+
+function selectorChange()
+{
+ 	videoSelected = videoSelect.value;
+ 	audioSelected = audioSelect.value;
+
+	console.log('selectorChange videoSelected: ' + videoSelected);
+ 	navigator.mediaDevices.enumerateDevices().then(gotDevices).catch(handleError);	
+ 	
+ 	selectorStart();
+}
+
+
+
+
+/*
 function selectorsReady()
 {
 	//selectors
@@ -37,47 +150,79 @@ function selectorsReady()
 
 	selectorStart();
 }
+*/
+
 
 function gotDevices(deviceInfos) {
   // Handles being called several times to update labels. Preserve values.
+   
   const values = selectors.map(select => select.value);
   selectors.forEach(select => {
     while (select.firstChild) {
       select.removeChild(select.firstChild);
     }
   });
+  
+  let videoValid = false;
+  let audioValid = false;
+   
   for (let i = 0; i !== deviceInfos.length; ++i) {
     const deviceInfo = deviceInfos[i];
     const option = document.createElement('option');
     option.value = deviceInfo.deviceId;
     if (deviceInfo.kind === 'audioinput') {
-      option.text = deviceInfo.label || `microphone jQuery{audioSelect.length + 1}`;
+      option.text = deviceInfo.label || `microphone ${audioSelect.length + 1}`;
       audioSelect.appendChild(option);
+       
+       if (deviceInfo.deviceId == audioSelected) audioValid = true; //selected id valid
+       
     } else if (deviceInfo.kind === 'videoinput') {
-      option.text = deviceInfo.label || `camera jQuery{videoSelect.length + 1}`;
+      option.text = deviceInfo.label || `camera ${videoSelect.length + 1}`;
       videoSelect.appendChild(option);
+
+      if (deviceInfo.deviceId == videoSelected) videoValid = true; //selected id valid
+
     } else {
       console.log('Some other kind of source/device: ', deviceInfo);
     }
   }
+  
   selectors.forEach((select, selectorIndex) => {
     if (Array.prototype.slice.call(select.childNodes).some(n => n.value === values[selectorIndex])) {
       select.value = values[selectorIndex];
     }
   });
 
+
+//updating videoSource,audioSource only if still valid because Safari changes deviceID
+ 
+ //first time
+ if (videoValid) videoSource = videoSelected; else videoSource = videoSelect.value;
+ if (audioValid) audioSource = audioSelected; else audioSource = audioSelect.value;
+
+//warn user if selection could not be applied
+ if (videoSelected || audioSelected) //changing (selected)
+ if (!videoValid || !audioValid)
+ {
+	      console.log('gotDevices: deviceID changed videoValid:' +  videoValid +' videoSelected: ' + videoSelected + ' audioValid:' + audioValid);
+		  jQuery("#sdpDataTag").html('Media DeviceID changed: Please select again!' );
+ }
+
+ console.log('gotDevices: verified videoSource: ' + videoSource + ' changed videoValid: '+videoValid);
+
 }
 
 function gotStream(stream) {
+     		
   window.stream = stream; // make stream available to console
   localVideo.srcObject = stream;
   
    	console.log("gotStream after getUserMedia: "+stream);
     localStream = stream;   	
-     	
-     //close prev stream
+
+     //close prev stream (to restart publishing)
      if (localStream != null) stopPublisher();
-     
+ 	     
  	//publish
  	startPublisher();
 
@@ -87,23 +232,37 @@ function gotStream(stream) {
 
 function handleError(error) {
   console.log('navigator.getUserMedia select error: ', error);
+  
+  jQuery("#sdpDataTag").html('getUserMedia Error: ' + error.toString());
 }
 
-function selectorStart() {
+function selectorStart() 
+{
   if (window.stream) {
     window.stream.getTracks().forEach(track => {
       track.stop();
     });
   }
+  
+  localVideo.srcObject = null; 
+
   const audioSource = audioSelect.value;
   const videoSource = videoSelect.value;
+  const videoResolution = resolutionSelect.value;
+	
+	for (var key in cameraResolutions)
+	if (key == videoResolution)
+	{
+		videoWidth = cameraResolutions[key]['width'];
+		videoHeight = cameraResolutions[key]['height'];
+	}
+
   const constraints = {
     audio: {deviceId: audioSource ? {exact: audioSource} : undefined},
-    video: {deviceId: videoSource ? {exact: videoSource} : undefined}
+    video: {deviceId: videoSource ? {exact: videoSource} : undefined, width: {exact: videoWidth}, height: {exact: videoHeight}},
   };
   
  
-
     if(navigator.mediaDevices.getUserMedia)
 	{
 		navigator.mediaDevices.getUserMedia(constraints).then(gotStream).then(gotDevices).catch(handleError);
@@ -121,32 +280,81 @@ function selectorStart() {
         alert('Your browser does not support getUserMedia API');
     }
 
-	console.log("newAPI: "+newAPI);
+	console.log("selectorStart videoSource: " + videoSource + "  newAPI: "+newAPI);
 
  
 }
 
 
 
+
+
 //WebRTC Publish
-
-
 
 function browserReady()
 {
 
 	localVideo = document.getElementById('localVideo');
+	
 	if ( userAgent == null )
 	{
 		userAgent="unknown";
 	}
 
+
+localVideo.onloadedmetadata = () => {
+  displayVideoDimensions('loadedmetadata');
+};
+
+localVideo.onresize = () => {
+  displayVideoDimensions('resize');
+};
+
+
 	selectorsReady();
 	
 }
 
+function displayVideoDimensions(whereSeen) {
+  var innerText;
+  
+  if (localVideo.videoWidth) {
+    innerText = 'Actual video dimensions: ' + localVideo.videoWidth +
+      'x' + localVideo.videoHeight + 'px.';
+    if (videoWidth !== localVideo.videoWidth
+      || videoHeight !== localVideo.videoHeight) {
+      videoWidth = localVideo.videoWidth;
+      videoHeight = localVideo.videoHeight;
+      
+      jQuery("#sdpDataTag").html(innerText);
+    }
+  } else {
+    innerText = 'Video dimensions: not ready';
+  }
+  
+        console.log('displayVideoDimensions:' + whereSeen + ': ' + innerText);
+
+}
+
+
+const offerOptions = {
+  offerToReceiveAudio: 1,
+  offerToReceiveVideo: 1
+};
+
 function wsConnect(url)
 {
+	
+  const videoTracks = localStream.getVideoTracks();
+  const audioTracks = localStream.getAudioTracks();
+  
+  if (videoTracks.length > 0) {
+    console.log(`Using Video device: ${videoTracks[0].label}`);
+  }
+  if (audioTracks.length > 0) {
+    console.log(`Using Audio device: ${audioTracks[0].label}`);
+  }
+  
 	wsConnection = new WebSocket(url);
 	wsConnection.binaryType = 'arraybuffer';
 
@@ -156,11 +364,16 @@ function wsConnect(url)
 
 		peerConnection = new RTCPeerConnection(peerConnectionConfig);
 		peerConnection.onicecandidate = gotIceCandidate;
+		
+		peerConnection.onsignalingstatechange = stateCallback1;
+		peerConnection.oniceconnectionstatechange = iceStateCallback1;
 
 		if (newAPI)
 		{
 			
 			localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));	
+			console.log('wsConnection.onopen Adding Local Stream to peer connection');
+
 		//	localStream.getTracks().forEach(function(track) {peerConnection.addTrack(track, stream);});
 		/*	
 			var localTracks = localStream.getTracks();
@@ -175,10 +388,32 @@ function wsConnect(url)
 			peerConnection.addStream(localStream);
 		}
 
-		peerConnection.createOffer(gotDescription, errorHandler);
+		//peerConnection.createOffer(gotDescription, errorHandler, offerOptions);
+		peerConnection.createOffer(offerOptions).then(gotDescription, errorHandler);
 
 
 	}
+	
+function stateCallback1() {
+  let state;
+  if (peerConnection) {
+    state = peerConnection.signalingState || peerConnection.readyState;
+    console.log(`peerConnection state change callback, state: ${state}`);
+    
+     jQuery("#sdpDataTag").html('Peer: ' + state);
+  }
+}
+
+function iceStateCallback1() {
+  let iceState;
+  if (peerConnection) {
+    iceState = peerConnection.iceConnectionState;
+    console.log(`peerConnection ICE connection state change callback, state: ${iceState}`);
+    
+    jQuery("#sdpDataTag").html('Peer connnection: ' + iceState);
+  }
+}
+
 
 	wsConnection.onmessage = function(evt)
 	{
@@ -215,7 +450,9 @@ function wsConnect(url)
 				{
 					console.log('iceCandidates: '+iceCandidates[index]);
 
-					peerConnection.addIceCandidate(new RTCIceCandidate(iceCandidates[index]));
+					//peerConnection.addIceCandidate(new RTCIceCandidate(iceCandidates[index]));
+					peerConnection.addIceCandidate(new RTCIceCandidate(iceCandidates[index])).then(() => onAddIceCandidateSuccess(peerConnection), err => onAddIceCandidateError(peerConnection, err));
+					
 				}
 			}
 		}
@@ -238,6 +475,15 @@ function wsConnect(url)
 		stopPublisher();
 	}
 }
+
+function onAddIceCandidateSuccess() {
+  console.log('AddIceCandidate success.');
+}
+
+function onAddIceCandidateError(error) {
+  console.log(`Failed to add Ice Candidate: ${error.toString()}`);
+}
+
 
 function getUserMediaSuccess(stream)
 {
@@ -290,17 +536,18 @@ function gotDescription(description)
 {
 	var enhanceData = new Object();
 
-	if (audioBitrate !== undefined)
-		enhanceData.audioBitrate = Number(audioBitrate);
-	if (videoBitrate !== undefined)
-		enhanceData.videoBitrate = Number(videoBitrate);
-	if (videoFrameRate !== undefined)
-		enhanceData.videoFrameRate = Number(videoFrameRate);
+	if (audioBitrate !== undefined) enhanceData.audioBitrate = Number(audioBitrate);
+	
+	if (videoBitrate !== undefined) enhanceData.videoBitrate = Number(videoBitrate);
+	if (videoFrameRate !== undefined) enhanceData.videoFrameRate = Number(videoFrameRate);
+
+
+	console.log('gotDescription: original: '+JSON.stringify({'sdp': description}));
 
 
 	description.sdp = enhanceSDP(description.sdp, enhanceData);
 
-	console.log('gotDescription: '+JSON.stringify({'sdp': description}));
+	console.log('gotDescription: enhanceSDP: '+JSON.stringify({'sdp': description}));
 
     peerConnection.setLocalDescription(description, function () {
 
@@ -397,13 +644,16 @@ function addVideo(sdpStr, videoLine)
 	return sdpStrRet;
 }
 
+
 function enhanceSDP(sdpStr, enhanceData)
 {
 	var sdpLines = sdpStr.split(/\r\n/);
 	var sdpSection = 'header';
 	var hitMID = false;
 	var sdpStrRet = '';
-	var audioMLines = null;
+	var audioMLines;
+
+	console.log("Original SDP: "+sdpStr);
 
 	if ( !sdpStr.includes("THIS_IS_SDPARTA") || videoChoice.includes("VP9") )
 	{
@@ -528,6 +778,7 @@ function enhanceSDP(sdpStr, enhanceData)
 	return sdpStrRet;
 }
 
+
 function deliverCheckLine(profile,type)
 {
 	var outputString = "";
@@ -615,11 +866,10 @@ function getrtpMapID(line)
 	return (found && found.length >= 3) ? found: null;
 }
 
+
 function errorHandler(error)
 {
     console.log(error);
 }
 
 //end
-
-

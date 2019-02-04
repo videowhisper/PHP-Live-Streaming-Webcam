@@ -6,7 +6,7 @@ include("incsan.php");
 sanV($n);
 if (!$n) exit;
 
-$swfurl="live_watch.swf?n=".urlencode($n);
+$swfurl="live_watch.swf?ssl=1&n=".urlencode($n);
 $bgcolor="#333333";
 ?><style type="text/css">
 <!--

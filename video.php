@@ -7,7 +7,7 @@ sanV($n);
 if (!$n) exit;
 
 
-$swfurl="live_video.swf?n=".urlencode($n);
+$swfurl="live_video.swf?ssl=1&n=".urlencode($n);
 $scale="noborder";
 
 $agent = $_SERVER['HTTP_USER_AGENT'];

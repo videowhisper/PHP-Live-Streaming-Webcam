@@ -2,7 +2,7 @@
 include("header.php");
 ?>
 
-<div style="padding:20px"><form id="adminForm" name="adminForm" method="post" action="live_broadcast.php" onSubmit="return censorName()">
+<div style="padding:20px"><form id="adminForm" name="adminForm" method="get" action="live_broadcast.php" onSubmit="return censorName()">
   <b>Provide a Label for your Channel</b><br>
   <br>
   Channel Name / Username
@@ -19,12 +19,21 @@ include("header.php");
 			</script>
 
 	<input name="username" type="text" id="username" value="Studio" size="12" maxlength="12" onChange="censorName()"/>
-    <input type="submit" name="button" id="button" value="Publish Channel" onClick="this.disabled=true; censorName(); this.value='Loading...'; adminForm.submit();" />
+
+<select name="onlyoptions" id="onlyoptions">
+  <option value="0">Start Broadcast</option>	
+  <option value="1">Only Options</option>
+</select>
+	
+    <input type="submit" name="button" id="button" value="Access Channel" onClick="this.disabled=true; censorName(); this.value='Loading...'; adminForm.submit();" />
 <?php
 include("settings.php");
 if (strstr($rtmp_server, "://localhost/")) echo "<P class='warning'>Warning: You are using a localhost based rtmp address ( $rtmp_server ). Unless you are just testing this with a rtmp server on your own computer, make sure you fill a <a href='http://www.videowhisper.com/?p=RTMP+Applications'>compatible rtmp address</a> in settings.php.</P>";
 ?>
-	</form></div>
+<br><small>Select Only Options (do not Start Broadcast) to access channel options including  HTML5 WebRTC broadcasting.</small>
+	</form>
+	
+	</div>
 
 <div class="info">
   <p><b>Suggestions</b></p>
